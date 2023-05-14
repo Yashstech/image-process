@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Overlay</title>
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ADD8E6;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 6px 7px rgba(0, 0, 0, 0.5);
+            max-width: 800px;
+            min-width: 700px;
+            min-height: 400px;
+            padding: 20px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #FFF;
+            border-radius: 10px;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            animation: fadeIn 1s;
+        }
+
+        .drop-zone {
+            border: 2px dashed #FF6347;
+            border-radius: 5px;
+            padding: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            animation: fadeIn 1s;
+        }
+
+        .drop-zone:hover {
+            background-color: rgba(255, 99, 71, 0.1);
+        }
+
+        #result-image {
+            max-width: 100%;
+            height: auto;
+            display: none;
+            margin-bottom: 20px;
+            animation: fadeIn 1s;
+            border-radius: 10px;
+        }
+
+        #download-button {
+            display: none;
+            background-color: #FF6347;
+            color: #FFF;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            transition: transform 0.3s;
+            border-radius: 5px;
+        }
+
+        #download-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>Image Overlay</h1>
+        <div class="drop-zone" id="drop-zone">
+            <p>Drag and drop a person image here or click to upload</p>
+        </div>
+        <h2>Result:</h2>
+        <img id="result-image" src="" alt="Result image">
+        <button id="download-button">Download</button>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+            const dropZone = document.getElementById('drop-zone');
+            const resultImage = document.getElementById('result-image');
+            const downloadButton = document.getElementById('download-button');
+
+            dropZone.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.addEventListener('change', handleFileSelect);
+                input.click();
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFileSelect(e);
+                }
+            });
+
+            async function handleFileSelect(e) {
+                const file = e.target.files ? e.target.files[0] : e.dataTransfer.files[0];
+                if (!file) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('person', file);
+                const productImage = '/image/cap.png'; // Replace with the path to your product image
+                formData.append('product', await fetch(productImage).then(r => r.blob()));
+
+                fetch('/overlay', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.blob())
+                    .then(imageBlob => {
+                        const imageUrl = URL.createObjectURL(imageBlob);
+                        resultImage.src = imageUrl;
+                        resultImage.style.display = 'block';
+                        downloadButton.style.display = 'block';
+                        downloadButton.onclick = () => {
+                            const link = document.createElement('a');
+                            link.href = imageUrl;
+                            link.download = 'result.jpg';
+                            link.click();
+                        };
+                    });
+            }
+        </script>
+    </main>
+</body>
+
+</html>
